@@ -21,25 +21,41 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(null); // 'left' | 'right' | null
   const dragStartRef = useRef({ x: 0, startTime: 0 });
+  const overlayRef = useRef(overlay);
+  const segmentsRef = useRef(segments);
+  
+  // Keep refs updated with latest values
+  overlayRef.current = overlay;
+  segmentsRef.current = segments;
 
   const isSelected =
     selection && selection.type === "overlay" && selection.id === overlay.id;
 
-  // Find the earliest segment this overlay is assigned to (for validation)
-  const earliestSegment = segments
+  // Find all segments this overlay is assigned to
+  const assignedSegments = segments
     .filter((seg) => overlay.segmentIds.includes(seg.id))
-    .sort((a, b) => a.startTime - b.startTime)[0];
+    .sort((a, b) => a.startTime - b.startTime);
 
-  if (!earliestSegment) return null;
+  if (assignedSegments.length === 0) return null;
+
+  const earliestSegment = assignedSegments[0];
+  const latestSegment = assignedSegments[assignedSegments.length - 1];
+
+  // Calculate the total duration across all assigned segments
+  // This is from the start of the earliest segment to the end of the latest segment
+  const totalAssignedDuration = (latestSegment.startTime + latestSegment.duration) - earliestSegment.startTime;
 
   // Calculate absolute timeline time for the overlay
   // startTime prop is already the earliest segment's start time, so just add overlay.startTime
   const overlayAbsoluteTime = startTime + overlay.startTime;
   const left = timeToPixels(overlayAbsoluteTime, pixelsPerSecond);
   const width = timeToPixels(overlay.duration, pixelsPerSecond);
+  
+  // Allow overlay to move across all assigned segments, not just the earliest one
+  // The maximum start time is the total duration minus the overlay's duration
   const maxStartWithinSegment = Math.max(
     0,
-    (earliestSegment?.duration || 0) - overlay.duration
+    totalAssignedDuration - overlay.duration
   );
 
   const handleMouseDown = (e) => {
@@ -81,14 +97,34 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
         let newStartTime = dragStartRef.current.startTime + deltaTime;
         // Snap to grid, but don't allow negative startTime
         const snappedTime = snapTime(newStartTime, grid, []);
-        // Clamp so overlay stays within its segment duration
-        newStartTime = Math.min(
-          Math.max(0, snappedTime),
-          maxStartWithinSegment
-        );
+        
+        // Recalculate max position based on current overlay and segments
+        // Use refs to get latest values without causing effect re-run
+        const currentOverlay = overlayRef.current;
+        const currentSegments = segmentsRef.current;
+        const currentAssignedSegments = currentSegments
+          .filter((seg) => currentOverlay.segmentIds.includes(seg.id))
+          .sort((a, b) => a.startTime - b.startTime);
+        
+        if (currentAssignedSegments.length > 0) {
+          const earliestSeg = currentAssignedSegments[0];
+          const latestSeg = currentAssignedSegments[currentAssignedSegments.length - 1];
+          const totalDuration = (latestSeg.startTime + latestSeg.duration) - earliestSeg.startTime;
+          const currentMaxStart = Math.max(0, totalDuration - currentOverlay.duration);
+          
+          // Clamp so overlay stays within all assigned segments
+          newStartTime = Math.min(
+            Math.max(0, snappedTime),
+            currentMaxStart
+          );
+        } else {
+          // Fallback: just ensure non-negative
+          newStartTime = Math.max(0, snappedTime);
+        }
+        
         dispatch(
           moveOverlay({
-            id: overlay.id,
+            id: currentOverlay.id,
             newStartTime,
           })
         );
@@ -102,7 +138,7 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
         if (newDuration >= minDuration && snappedStart >= 0) {
           dispatch(
             resizeOverlay({
-              id: overlay.id,
+              id: overlayRef.current.id,
               newStartTime: snappedStart,
               newDuration: newDuration,
             })
@@ -117,7 +153,7 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
           const snappedDuration = snapTime(newDuration, grid, []);
           dispatch(
             resizeOverlay({
-              id: overlay.id,
+              id: overlayRef.current.id,
               newDuration: snappedDuration,
             })
           );
@@ -141,7 +177,7 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
       document.removeEventListener("touchmove", handleMove);
       document.removeEventListener("touchend", handleEnd);
     };
-  }, [isDragging, isResizing, pixelsPerSecond, grid, overlay.id, dispatch]);
+  }, [isDragging, isResizing, pixelsPerSecond, grid, dispatch]);
 
   const handleKeyDown = (e) => {
     const step = grid;
