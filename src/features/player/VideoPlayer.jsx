@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { selectPlayhead, setPlayheadTime, setPlaying } from "../ui/uiSlice";
 import { selectAllSegments } from "../segments/segmentsSlice";
 import { selectAllOverlays } from "../overlays/overlaysSlice";
+import { selectAllTransitions } from "../transitions/transitionsSlice";
 import {
   getSegmentAtTime,
   globalTimeToSegmentTime,
@@ -21,11 +22,74 @@ const VideoPlayer = () => {
   const playhead = useSelector(selectPlayhead);
   const segments = useSelector(selectAllSegments);
   const overlays = useSelector(selectAllOverlays);
+  const transitions = useSelector(selectAllTransitions);
   const [currentSegment, setCurrentSegment] = useState(null);
+  const [activeTransition, setActiveTransition] = useState(null);
   const playAllRef = useRef(false);
   const timeUpdateThrottleRef = useRef(null);
   const initializedRef = useRef(false);
   const currentSegmentRef = useRef(null);
+
+  const getTransitionBetween = (fromId, toId) => {
+    if (!fromId || !toId) return null;
+    return (
+      transitions.find(
+        (t) => t.fromSegmentId === fromId && t.toSegmentId === toId
+      ) || null
+    );
+  };
+
+  const TransitionOverlay = ({ config }) => {
+    const { type, duration, easing } = config;
+    const [visible, setVisible] = useState(true);
+
+    useEffect(() => {
+      // Start animation on next frame
+      const frame = requestAnimationFrame(() => setVisible(false));
+      const timer = setTimeout(() => {
+        setActiveTransition(null);
+        cancelAnimationFrame(frame);
+      }, Math.max(50, (duration || 0.5) * 1000));
+
+      return () => {
+        clearTimeout(timer);
+        cancelAnimationFrame(frame);
+      };
+    }, [duration]);
+
+    const baseStyle = {
+      position: "absolute",
+      inset: 0,
+      pointerEvents: "none",
+      transition: `all ${duration || 0.5}s ${easing || "ease-in-out"}`,
+      zIndex: 5,
+    };
+
+    let style = {};
+    const t = (type || "Fade").toLowerCase();
+
+    if (t === "zoom") {
+      style = {
+        backgroundColor: "rgba(0, 0, 0, 0.2)",
+        transform: visible ? "scale(1.1)" : "scale(1)",
+        opacity: visible ? 1 : 0,
+      };
+    } else if (t === "slide") {
+      style = {
+        backgroundColor: "rgba(0, 0, 0, 0.2)",
+        transform: visible ? "translateX(15%)" : "translateX(0)",
+        opacity: visible ? 1 : 0,
+      };
+    } else {
+      // Fade / Crossfade
+      style = {
+        backgroundColor: "black",
+        opacity: visible ? 1 : 0,
+      };
+    }
+
+    return <div style={{ ...baseStyle, ...style }} />;
+  };
 
   // Set up video event handlers
   useEffect(() => {
@@ -104,6 +168,15 @@ const VideoPlayer = () => {
         const nextSegment = sortedSegments[currentIndex + 1];
 
         if (nextSegment) {
+          const tr = getTransitionBetween(activeSegment.id, nextSegment.id);
+          if (tr) {
+            setActiveTransition({
+              type: tr.type,
+              duration: tr.duration || 0.5,
+              easing: tr.easing || "ease-in-out",
+              key: `${activeSegment.id}-${nextSegment.id}-${Date.now()}`,
+            });
+          }
           switchToSegment(nextSegment);
           dispatch(setPlayheadTime(nextSegment.startTime));
           video.play().catch(console.error);
@@ -351,6 +424,12 @@ const VideoPlayer = () => {
           playsInline
           preload="auto"
         />
+        {activeTransition && (
+          <TransitionOverlay
+            key={activeTransition.key}
+            config={activeTransition}
+          />
+        )}
         <OverlayCanvas
           overlays={visibleOverlays}
           currentSegment={currentSegment}
