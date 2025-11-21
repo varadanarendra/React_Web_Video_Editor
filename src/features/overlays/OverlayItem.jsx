@@ -25,7 +25,7 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
   const isSelected =
     selection && selection.type === "overlay" && selection.id === overlay.id;
 
-  // Find the earliest segment this overlay is assigned to
+  // Find the earliest segment this overlay is assigned to (for validation)
   const earliestSegment = segments
     .filter((seg) => overlay.segmentIds.includes(seg.id))
     .sort((a, b) => a.startTime - b.startTime)[0];
@@ -33,7 +33,8 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
   if (!earliestSegment) return null;
 
   // Calculate absolute timeline time for the overlay
-  const overlayAbsoluteTime = earliestSegment.startTime + overlay.startTime;
+  // startTime prop is already the earliest segment's start time, so just add overlay.startTime
+  const overlayAbsoluteTime = startTime + overlay.startTime;
   const left = timeToPixels(overlayAbsoluteTime, pixelsPerSecond);
   const width = timeToPixels(overlay.duration, pixelsPerSecond);
 

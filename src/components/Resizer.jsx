@@ -15,21 +15,26 @@ const Resizer = ({
 
   const handleSize = 10; // pixels - slightly larger for touch
   const { x, y, width, height } = overlay;
-  
-  const absX = x * containerWidth;
-  const absY = y * containerHeight;
+
+  // Handles should be positioned relative to the overlay box itself,
+  // not the full video container. The overlay container is already
+  // positioned at (x * containerWidth, y * containerHeight) with
+  // width/height (width * containerWidth / height * containerHeight).
+  // So here we only care about the local size.
   const absWidth = width * containerWidth;
   const absHeight = height * containerHeight;
 
   const handles = [
-    { id: 'nw', x: absX, y: absY, cursor: 'nwse-resize' },
-    { id: 'ne', x: absX + absWidth, y: absY, cursor: 'nesw-resize' },
-    { id: 'sw', x: absX, y: absY + absHeight, cursor: 'nesw-resize' },
-    { id: 'se', x: absX + absWidth, y: absY + absHeight, cursor: 'nwse-resize' },
-    { id: 'n', x: absX + absWidth / 2, y: absY, cursor: 'ns-resize' },
-    { id: 's', x: absX + absWidth / 2, y: absY + absHeight, cursor: 'ns-resize' },
-    { id: 'w', x: absX, y: absY + absHeight / 2, cursor: 'ew-resize' },
-    { id: 'e', x: absX + absWidth, y: absY + absHeight / 2, cursor: 'ew-resize' },
+    // Corner handles
+    { id: 'nw', x: 0, y: 0, cursor: 'nwse-resize' },
+    { id: 'ne', x: absWidth, y: 0, cursor: 'nesw-resize' },
+    { id: 'sw', x: 0, y: absHeight, cursor: 'nesw-resize' },
+    { id: 'se', x: absWidth, y: absHeight, cursor: 'nwse-resize' },
+    // Edge handles
+    { id: 'n', x: absWidth / 2, y: 0, cursor: 'ns-resize' },
+    { id: 's', x: absWidth / 2, y: absHeight, cursor: 'ns-resize' },
+    { id: 'w', x: 0, y: absHeight / 2, cursor: 'ew-resize' },
+    { id: 'e', x: absWidth, y: absHeight / 2, cursor: 'ew-resize' },
   ];
 
   return (
