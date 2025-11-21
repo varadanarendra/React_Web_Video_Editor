@@ -29,6 +29,8 @@ const VideoPlayer = () => {
   const timeUpdateThrottleRef = useRef(null);
   const initializedRef = useRef(false);
   const currentSegmentRef = useRef(null);
+  const playheadTimeRef = useRef(playhead.time);
+  const rafRef = useRef(null);
 
   const getTransitionBetween = (fromId, toId) => {
     if (!fromId || !toId) return null;
@@ -38,6 +40,53 @@ const VideoPlayer = () => {
       ) || null
     );
   };
+
+  // Keep a ref of the latest playhead time for synthetic timeline ticking
+  useEffect(() => {
+    playheadTimeRef.current = playhead.time;
+  }, [playhead.time]);
+
+  // When playing but not inside any segment (no video), advance playhead using
+  // a synthetic clock so the slider keeps moving across gaps/empty timeline.
+  useEffect(() => {
+    const tick = (timestamp) => {
+      if (!playhead.playing) {
+        rafRef.current = null;
+        return;
+      }
+
+      // If we are inside a segment (currentSegmentRef set) we let the video
+      // element drive the playhead via timeupdate; only tick when outside.
+      if (!currentSegmentRef.current) {
+        if (tick.lastTs != null) {
+          const deltaSec = (timestamp - tick.lastTs) / 1000;
+          if (deltaSec > 0) {
+            const nextTime = Math.max(0, playheadTimeRef.current + deltaSec);
+            dispatch(setPlayheadTime(nextTime));
+          }
+        }
+        tick.lastTs = timestamp;
+      } else {
+        // Reset lastTs so we don't get a huge jump when re‑entering a gap
+        tick.lastTs = null;
+      }
+
+      rafRef.current = requestAnimationFrame(tick);
+    };
+    tick.lastTs = null;
+
+    if (playhead.playing && !rafRef.current) {
+      rafRef.current = requestAnimationFrame(tick);
+    }
+
+    return () => {
+      if (rafRef.current) {
+        cancelAnimationFrame(rafRef.current);
+        rafRef.current = null;
+      }
+      tick.lastTs = null;
+    };
+  }, [playhead.playing, dispatch]);
 
   const TransitionOverlay = ({ config }) => {
     const { type, duration, easing } = config;
@@ -289,6 +338,20 @@ const VideoPlayer = () => {
             }
           }
         }
+      }
+    } else {
+      // Playhead is not over any segment: clear current segment and video
+      if (currentSegment) {
+        setCurrentSegment(null);
+        currentSegmentRef.current = null;
+      }
+      // Always pause and clear src so the player appears empty
+      if (!video.paused) {
+        video.pause();
+      }
+      if (video.src) {
+        video.removeAttribute("src");
+        video.load();
       }
     }
 

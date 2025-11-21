@@ -349,10 +349,11 @@ function App() {
       return;
     }
 
-    const firstSegment = segments[0];
+    // Assign overlay to all current segments by default
+    const segmentIds = segments.map((s) => s.id);
     dispatch(
       addOverlay({
-        segmentIds: [firstSegment.id],
+        segmentIds,
         startTime: 0,
         duration: 5,
         x: 0.1,
@@ -374,9 +375,22 @@ function App() {
     const sortedSegments = [...segments].sort(
       (a, b) => a.startTime - b.startTime
     );
-    const firstSegment = sortedSegments[0];
 
-    dispatch(setPlayheadTime(firstSegment.startTime));
+    // Start from current playhead position if it's inside any segment;
+    // otherwise, start from the first segment.
+    const currentTime = playhead.time;
+    const fromCurrent =
+      sortedSegments.find(
+        (seg) =>
+          currentTime >= seg.startTime &&
+          currentTime < seg.startTime + seg.duration
+      ) || sortedSegments.find((seg) => currentTime < seg.startTime);
+
+    const startTime = fromCurrent
+      ? Math.max(currentTime, fromCurrent.startTime)
+      : sortedSegments[0].startTime;
+
+    dispatch(setPlayheadTime(startTime));
     dispatch(setPlaying(true));
   };
 
