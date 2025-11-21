@@ -430,11 +430,11 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen text-white bg-gray-900">
       {/* Header */}
-      <header className="bg-gray-800 border-b border-gray-700 px-2 sm:px-4 py-2 sm:py-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4">
-          <div className="flex items-center gap-2">
+      <header className="px-2 py-2 bg-gray-800 border-b border-gray-700 sm:px-4 sm:py-3">
+        <div className="flex flex-col gap-3 justify-between items-start sm:flex-row sm:items-center sm:gap-4">
+          <div className="flex gap-2 items-center">
             <svg
               className="w-5 h-5 sm:w-6 sm:h-6"
               fill="none"
@@ -448,7 +448,7 @@ function App() {
                 d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
               />
             </svg>
-            <h1 className="text-lg sm:text-xl font-bold">Video Editor</h1>
+            <h1 className="text-lg font-bold sm:text-xl">Video Editor</h1>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
@@ -510,9 +510,9 @@ function App() {
       />
 
       {/* Main content */}
-      <main className="container mx-auto px-2 sm:px-4 py-3 sm:py-6 max-w-full">
+      <main className="container px-2 py-3 mx-auto max-w-full sm:px-4 sm:py-6">
         {/* Video Player - centered with letterboxing */}
-        <div className="w-full mb-3 sm:mb-6">
+        <div className="mb-3 w-full sm:mb-6">
           <VideoPlayer />
         </div>
 
@@ -524,7 +524,7 @@ function App() {
 
       {/* Export JSON modal */}
       <JsonModal
-        title="Export Timeline JSON"
+        title="Export JSON"
         isOpen={showExportPanel}
         onClose={() => setShowExportPanel(false)}
         jsonString={exportJson}

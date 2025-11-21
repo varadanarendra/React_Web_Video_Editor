@@ -54,21 +54,21 @@ const TimelineControls = ({ onFitToScreen }) => {
         variant="secondary"
         onClick={handleFitToScreen}
         ariaLabel="Fit timeline to screen"
-        className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+        className="text-xs sm:text-sm px-2 sm:px-2 py-1 sm:py-1"
       >
         Fit to Screen
       </Button>
-      
+
       <div className="flex items-center gap-2">
         <Button
           variant="secondary"
           onClick={handleZoomOut}
           ariaLabel="Zoom out"
-          className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+          className="text-xs sm:text-sm px-2 sm:px-2 py-1 sm:py-1"
         >
           −
         </Button>
-        
+
         <label className="text-white text-xs sm:text-sm flex items-center gap-1 sm:gap-2">
           <span>Zoom:</span>
           <input
@@ -81,14 +81,16 @@ const TimelineControls = ({ onFitToScreen }) => {
             className="w-16 sm:w-24"
             aria-label="Timeline zoom level"
           />
-          <span className="text-xs sm:text-sm whitespace-nowrap">{zoom.toFixed(1)}x</span>
+          <span className="text-xs sm:text-sm whitespace-nowrap">
+            {zoom.toFixed(1)}x
+          </span>
         </label>
-        
+
         <Button
           variant="secondary"
           onClick={handleZoomIn}
           ariaLabel="Zoom in"
-          className="text-xs sm:text-sm px-2 sm:px-3 py-1 sm:py-1.5"
+          className="text-xs sm:text-sm px-2 sm:px-2 py-1 sm:py-1"
         >
           +
         </Button>
@@ -98,4 +100,3 @@ const TimelineControls = ({ onFitToScreen }) => {
 };
 
 export default TimelineControls;
-
