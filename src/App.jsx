@@ -10,7 +10,10 @@ import {
   deleteOverlay,
   selectAllOverlays,
 } from "./features/overlays/overlaysSlice";
-import { selectAllTransitions } from "./features/transitions/transitionsSlice";
+import {
+  selectAllTransitions,
+  deleteTransition,
+} from "./features/transitions/transitionsSlice";
 import {
   selectPlayhead,
   setPlaying,
@@ -205,6 +208,10 @@ function App() {
         } else if (selection.type === "overlay") {
           // Delete the overlay
           dispatch(deleteOverlay(selection.id));
+          dispatch(clearSelection());
+        } else if (selection.type === "transition") {
+          // Delete a transition between segments
+          dispatch(deleteTransition(selection.id));
           dispatch(clearSelection());
         }
       }
