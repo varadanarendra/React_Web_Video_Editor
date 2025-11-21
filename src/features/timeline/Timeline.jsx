@@ -8,6 +8,8 @@ import {
   selectTimelineViewport,
   setPlayheadTime,
   setSelection,
+  setZoom,
+  fitTimelineToContent,
 } from "../ui/uiSlice";
 import {
   timeToPixels,
@@ -37,6 +39,37 @@ const Timeline = () => {
   useEffect(() => {
     setPixelsPerSecond(50 * zoom);
   }, [zoom]);
+
+  // Fit all content horizontally into the visible timeline area
+  const handleFitToScreen = () => {
+    if (!timelineRef.current) return;
+
+    const totalDuration = getTotalDuration(segments);
+    if (!totalDuration || totalDuration <= 0) return;
+
+    const rect = timelineRef.current.getBoundingClientRect();
+    const containerWidth = rect.width;
+    if (!containerWidth || containerWidth <= 0) return;
+
+    const basePixelsPerSecond = 50;
+    const paddingSeconds = 1;
+    const visibleDuration = Math.max(totalDuration + paddingSeconds, 5);
+
+    // Compute zoom so that the whole duration fits in the visible width.
+    const newZoom =
+      containerWidth / (visibleDuration * basePixelsPerSecond || 1);
+
+    // Clamp to allowed zoom range
+    const clampedZoom = Math.max(0.1, Math.min(10, newZoom));
+
+    dispatch(setZoom(clampedZoom));
+    dispatch(
+      fitTimelineToContent({
+        minStart: 0,
+        maxEnd: visibleDuration,
+      })
+    );
+  };
 
   // Generate time markers
   const timeMarkers = useMemo(() => {
@@ -79,7 +112,7 @@ const Timeline = () => {
     <div className="flex flex-col bg-gray-800 text-white rounded-lg p-2 sm:p-4">
       <div className="mb-2 flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-base sm:text-lg font-semibold">Timeline</h2>
-        <TimelineControls />
+          <TimelineControls onFitToScreen={handleFitToScreen} />
       </div>
 
       <div

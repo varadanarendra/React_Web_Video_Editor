@@ -337,13 +337,12 @@ const VideoPlayer = () => {
       <div
         className="w-full relative"
         style={{
-          maxWidth: "1280px",
+          maxWidth: "800px",
           margin: "0 auto",
         }}
       >
         <video
           ref={videoRef}
-          controls
           style={{
             width: "100%",
             height: "auto",

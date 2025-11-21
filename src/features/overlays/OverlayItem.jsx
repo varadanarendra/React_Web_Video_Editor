@@ -37,6 +37,10 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
   const overlayAbsoluteTime = startTime + overlay.startTime;
   const left = timeToPixels(overlayAbsoluteTime, pixelsPerSecond);
   const width = timeToPixels(overlay.duration, pixelsPerSecond);
+  const maxStartWithinSegment = Math.max(
+    0,
+    (earliestSegment?.duration || 0) - overlay.duration
+  );
 
   const handleMouseDown = (e) => {
     if (e.target.closest(".resize-handle")) return;
@@ -74,13 +78,18 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
 
       if (isDragging) {
         // Move overlay along timeline
-        const newStartTime = dragStartRef.current.startTime + deltaTime;
+        let newStartTime = dragStartRef.current.startTime + deltaTime;
         // Snap to grid, but don't allow negative startTime
         const snappedTime = snapTime(newStartTime, grid, []);
+        // Clamp so overlay stays within its segment duration
+        newStartTime = Math.min(
+          Math.max(0, snappedTime),
+          maxStartWithinSegment
+        );
         dispatch(
           moveOverlay({
             id: overlay.id,
-            newStartTime: Math.max(0, snappedTime),
+            newStartTime,
           })
         );
       } else if (isResizing === "left") {
@@ -146,8 +155,16 @@ const OverlayItem = ({ overlay, startTime, pixelsPerSecond, onSelect }) => {
         break;
       case "ArrowRight":
         e.preventDefault();
-        newStartTime = overlay.startTime + step;
-        dispatch(moveOverlay({ id: overlay.id, newStartTime }));
+        newStartTime = Math.min(
+          overlay.startTime + step,
+          maxStartWithinSegment
+        );
+        dispatch(
+          moveOverlay({
+            id: overlay.id,
+            newStartTime,
+          })
+        );
         break;
       default:
         return;

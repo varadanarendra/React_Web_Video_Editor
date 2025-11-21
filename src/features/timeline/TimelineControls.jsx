@@ -1,14 +1,20 @@
-import React from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { selectZoom, selectTimelineViewport, setZoom, adjustZoom, fitTimelineToContent } from '../ui/uiSlice';
-import { selectAllSegments } from '../segments/segmentsSlice';
-import { getTotalDuration } from '../../utils/timelineUtils';
-import Button from '../../components/Button';
+import React from "react";
+import { useSelector, useDispatch } from "react-redux";
+import {
+  selectZoom,
+  selectTimelineViewport,
+  setZoom,
+  adjustZoom,
+  fitTimelineToContent,
+} from "../ui/uiSlice";
+import { selectAllSegments } from "../segments/segmentsSlice";
+import { getTotalDuration } from "../../utils/timelineUtils";
+import Button from "../../components/Button";
 
 /**
  * Timeline controls component - zoom, fit to screen, etc.
  */
-const TimelineControls = () => {
+const TimelineControls = ({ onFitToScreen }) => {
   const dispatch = useDispatch();
   const zoom = useSelector(selectZoom);
   const viewport = useSelector(selectTimelineViewport);
@@ -23,6 +29,14 @@ const TimelineControls = () => {
   };
 
   const handleFitToScreen = () => {
+    // If parent (Timeline) provides a custom fit handler that knows
+    // the actual container width, prefer that for a true "fit" behavior.
+    if (onFitToScreen) {
+      onFitToScreen();
+      return;
+    }
+
+    // Fallback: just update the viewport based on total duration.
     const totalDuration = getTotalDuration(segments);
     if (totalDuration > 0) {
       dispatch(fitTimelineToContent({ minStart: 0, maxEnd: totalDuration }));
