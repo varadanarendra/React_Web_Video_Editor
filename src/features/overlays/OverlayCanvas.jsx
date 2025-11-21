@@ -78,17 +78,19 @@ const OverlayCanvas = ({ overlays, currentSegment, timelineTime }) => {
         const deltaXRel = absoluteToRelative(deltaX, rect.width);
         const deltaYRel = absoluteToRelative(deltaY, rect.height);
 
-        // Clamp so the entire overlay stays within the video bounds
-        const maxX = Math.max(0, 1 - overlay.width);
-        const maxY = Math.max(0, 1 - overlay.height);
-        const newX = Math.max(0, Math.min(maxX, overlay.x + deltaXRel));
-        const newY = Math.max(0, Math.min(maxY, overlay.y + deltaYRel));
+        // Use shared geometry constraints so the entire box stays within bounds
+        const proposed = {
+          ...overlay,
+          x: overlay.x + deltaXRel,
+          y: overlay.y + deltaYRel,
+        };
+        const constrained = constrainOverlayGeometry(proposed);
 
         dispatch(
           updateOverlayGeometry({
             id: overlay.id,
-            x: newX,
-            y: newY,
+            x: constrained.x,
+            y: constrained.y,
           })
         );
       } else if (isResizing && dragStartRef.current.overlay) {

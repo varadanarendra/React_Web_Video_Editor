@@ -58,8 +58,6 @@ function App() {
         return;
       }
 
-      console.log("Loading videos from public/videos directory...");
-
       const videoFiles = [
         { file: "vid_1.mp4", label: "Video 1" },
         { file: "vid_2.mp4", label: "Video 2" },
@@ -89,9 +87,6 @@ function App() {
             const duration = video.duration;
 
             if (duration && duration > 0 && !isNaN(duration)) {
-              console.log(
-                `Loaded video: ${videoLabel} (${videoFile}) - Duration: ${duration}s`
-              );
               dispatch(
                 addSegment({
                   source: videoPath,
@@ -124,10 +119,6 @@ function App() {
           };
         });
       }
-
-      console.log(
-        `Finished loading videos. Successfully loaded ${loadedCount} out of ${videoFiles.length} videos.`
-      );
 
       // Auto-fit timeline viewport to show all loaded videos
       if (loadedCount > 0) {
@@ -232,12 +223,8 @@ function App() {
 
     if (files.length === 0) return;
 
-    console.log(`Processing ${files.length} file(s)...`);
-
     for (const file of files) {
       if (file.type.startsWith("video/")) {
-        console.log(`Loading video: ${file.name} (${file.type})`);
-
         // Create object URL for the video file
         const videoUrl = URL.createObjectURL(file);
 
