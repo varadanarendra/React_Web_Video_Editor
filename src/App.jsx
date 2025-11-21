@@ -22,8 +22,8 @@ import {
 import { store } from "./app/store";
 import VideoPlayer from "./features/player/VideoPlayer";
 import Timeline from "./features/timeline/Timeline";
-import ExportPanel from "./features/export/ExportPanel";
 import Button from "./components/Button";
+import JsonModal from "./components/JsonModal";
 
 /**
  * Main App component
@@ -38,6 +38,7 @@ function App() {
   const selection = useSelector(selectSelection);
   const fileInputRef = useRef(null);
   const [showExportPanel, setShowExportPanel] = useState(false);
+  const [exportJson, setExportJson] = useState("");
   const videosLoadedRef = useRef(false);
 
   // Load videos from public/videos on mount
@@ -415,8 +416,9 @@ function App() {
       })),
     };
 
-    // Show the JSON in an alert dialog
-    alert(JSON.stringify(exportData, null, 2));
+    // Show the JSON in a reusable popup component
+    setExportJson(JSON.stringify(exportData, null, 2));
+    setShowExportPanel(true);
   };
 
   return (
@@ -466,7 +468,7 @@ function App() {
               }
               className="text-xs sm:text-sm px-2 sm:px-4 py-1.5 sm:py-2"
             >
-              {playhead.playing ? "⏸ Stop" : "► Play All"}
+              {playhead.playing ? "⏸ Pause" : "► Play All"}
             </Button>
             <Button
               variant="default"
@@ -511,6 +513,14 @@ function App() {
           <Timeline />
         </div>
       </main>
+
+      {/* Export JSON modal */}
+      <JsonModal
+        title="Export Timeline JSON"
+        isOpen={showExportPanel}
+        onClose={() => setShowExportPanel(false)}
+        jsonString={exportJson}
+      />
     </div>
   );
 }
