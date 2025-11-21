@@ -444,20 +444,27 @@ const VideoPlayer = () => {
     }, 100);
   };
 
-  // Get overlays visible at current time
+  // Get overlays visible at current timeline time
+  // Overlays should be shown based on timeline time, not just when a segment is playing
   const visibleOverlays = overlays.filter((overlay) => {
-    if (!currentSegment || !overlay.segmentIds.includes(currentSegment.id)) {
-      return false;
-    }
-    const segmentLocalTime = globalTimeToSegmentTime(
-      currentSegment,
-      playhead.time
+    // Find all segments this overlay is assigned to
+    const assignedSegments = segments.filter((seg) =>
+      overlay.segmentIds.includes(seg.id)
     );
-    if (segmentLocalTime === null) return false;
-    return (
-      segmentLocalTime >= overlay.startTime &&
-      segmentLocalTime < overlay.startTime + overlay.duration
-    );
+
+    if (assignedSegments.length === 0) return false;
+
+    // Find the earliest segment to calculate absolute timeline position
+    const earliestSegment = assignedSegments.sort(
+      (a, b) => a.startTime - b.startTime
+    )[0];
+
+    // Calculate absolute timeline time for overlay start and end
+    const overlayStartTime = earliestSegment.startTime + overlay.startTime;
+    const overlayEndTime = overlayStartTime + overlay.duration;
+
+    // Check if current timeline time falls within overlay's time range
+    return playhead.time >= overlayStartTime && playhead.time < overlayEndTime;
   });
 
   return (
@@ -471,28 +478,54 @@ const VideoPlayer = () => {
       }}
     >
       <div
-        className="w-full relative"
+        className="w-full relative bg-black"
         style={{
           maxWidth: "800px",
           margin: "0 auto",
+          minHeight: "400px", // Ensure container has height even without video
+          aspectRatio: currentSegment ? undefined : "16/9", // Maintain aspect ratio when no video
         }}
       >
+        {/* Always render video element (needed for ref to work) */}
         <video
           ref={videoRef}
           style={{
             width: "100%",
             height: "auto",
-            display: "block",
+            display: currentSegment ? "block" : "none",
           }}
           playsInline
           preload="auto"
         />
+        {/* Show placeholder background when no video (for overlays to be visible) */}
+        {!currentSegment && (
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              minHeight: "400px",
+              backgroundColor: "#000",
+              display: visibleOverlays.length > 0 ? "block" : "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: "#666",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              zIndex: 1,
+            }}
+          >
+            {visibleOverlays.length === 0 && null}
+          </div>
+        )}
         {activeTransition && (
           <TransitionOverlay
             key={activeTransition.key}
             config={activeTransition}
           />
         )}
+        {/* Always render OverlayCanvas - it will handle empty overlays array */}
+        {/* Overlays can be shown even when there's no video */}
         <OverlayCanvas
           overlays={visibleOverlays}
           currentSegment={currentSegment}
